@@ -1,5 +1,27 @@
+from recipes.models import Ingredient, Recipe, Tag
 from rest_framework import serializers
 from users.models import CustomUser
+
+
+class TagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = ('name', 'slug', 'color')
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Ingredient
+        fields = ('name', 'quantity', 'unit')
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ('name', 'author', 'description', 'ingredients', 'tag')
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
