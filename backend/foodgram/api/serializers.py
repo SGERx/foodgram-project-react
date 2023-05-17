@@ -30,17 +30,22 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('username',
-                  'email',
+        fields = ('email',
+                  'username',
                   'first_name',
                   'last_name',
+                  'password',
                   )
-        required_fields = ('username', 'email')
+        required_fields = ('email', 'username', 'first_name', 'last_name',
+                           'password')
 
 
 class SignupSerializer(serializers.Serializer):
-    email = serializers.EmailField(max_length=30, required=True)
-    username = serializers.CharField(max_length=30, required=True)
+    email = serializers.EmailField(max_length=255, required=True)
+    username = serializers.CharField(max_length=151, required=True)
+    first_name = serializers.EmailField(max_length=151, required=True)
+    last_name = serializers.CharField(max_length=151, required=True)
+    password = serializers.CharField(max_length=151, required=True)
 
     def create(self, validated_data):
 
