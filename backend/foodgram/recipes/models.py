@@ -44,9 +44,9 @@ class Recipe(models.Model):
                               default=None)
     name = models.CharField(max_length=200,
                             verbose_name='название')
-    text = models.TextField(verbose_name='описание')
+    text = models.TextField(verbose_name='описание', default=None)
     cooking_time = models.IntegerField(
-        verbose_name='время приготовления в минутах', min_value=1)
+        verbose_name='время приготовления в минутах', default=1)
     slug = models.CharField(unique=True,
                             max_length=16)
     author = models.ForeignKey(CustomUser,

@@ -8,10 +8,10 @@ class CustomUser(AbstractUser):
     USER = 'user'
     ADMIN = 'admin'
 
-    ROLE_CHOICE = (
-        (USER, 'Авторизованный пользователь'),
-        (ADMIN, 'Администратор'),
-    )
+    # ROLE_CHOICE = (
+    #     (USER, 'Авторизованный пользователь'),
+    #     (ADMIN, 'Администратор'),
+    # )
 
     email = models.EmailField(max_length=254, unique=True)
     username = models.CharField(max_length=150, unique=True)
