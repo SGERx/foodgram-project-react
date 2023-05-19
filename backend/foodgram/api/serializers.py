@@ -36,9 +36,10 @@ class CustomUserSerializer(serializers.ModelSerializer):
                   'first_name',
                   'last_name'
                   )
-        required_fields = ('email', 'username', 'first_name', 'last_name'
+        required_fields = ('email', 'username'
                            )
-
+        # required_fields = ('email', 'username', 'first_name', 'last_name'
+        #                    )
 
 # class SignupSerializer(serializers.Serializer):
 #     email = serializers.EmailField(max_length=255, required=True)

@@ -13,6 +13,9 @@ class CustomUser(AbstractUser):
     #     (ADMIN, 'Администратор'),
     # )
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username',)
+
     email = models.EmailField(max_length=254, unique=True)
     username = models.CharField(max_length=150, unique=True)
     first_name = models.CharField(max_length=150, unique=True)

@@ -144,14 +144,19 @@ REST_FRAMEWORK = {
 }
 
 
-SIMPLE_JWT = {
-   # Устанавливаем срок жизни токена
-   'ACCESS_TOKEN_LIFETIME': timedelta(days=100),
-   'AUTH_HEADER_TYPES': ('Bearer',),
-}
+# SIMPLE_JWT = {
+#    # Устанавливаем срок жизни токена
+#    'ACCESS_TOKEN_LIFETIME': timedelta(days=100),
+#    'AUTH_HEADER_TYPES': ('Bearer',),
+# }
 
 
 # AUTHENTICATION_BACKENDS = [
 #      'django.contrib.auth.backends.ModelBackend',
 #      'path.to.your.EmailBackend',
 # ]
+
+# AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
+
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.AllowAllUsersModelBackend']

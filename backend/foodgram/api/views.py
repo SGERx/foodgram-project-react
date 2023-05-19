@@ -39,6 +39,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+
+    @action(['get'], detail=False)
+    def me(self, request):
+        user = get_object_or_404(CustomUser, pk=request.user.pk)
+        serializer = CustomUserSerializer(user)
+        return Response(serializer.data)
+
+    def perform_create(self, serializer):
+        if 'password' in self.request.data:
+            password = make_password(self.request.data['password'])
+            serializer.save(password=password)
+        else:
+            serializer.save()
     # lookup_field = 'username'
     # # filter_backends = (filters.SearchFilter,)
     # search_fields = ('username')
@@ -70,12 +83,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
     #     return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def perform_create(self, serializer):
-        if 'password' in self.request.data:
-            password = make_password(self.request.data['password'])
-            serializer.save(password=password)
-        else:
-            serializer.save()
+
 
 
 
