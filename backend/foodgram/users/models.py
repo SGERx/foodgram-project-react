@@ -5,8 +5,8 @@ from django.db import models
 class CustomUser(AbstractUser):
     """Custom-модель пользователя """
 
-    USER = 'user'
-    ADMIN = 'admin'
+    # USER = 'user'
+    # ADMIN = 'admin'
 
     # ROLE_CHOICE = (
     #     (USER, 'Авторизованный пользователь'),
