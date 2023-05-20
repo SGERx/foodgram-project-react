@@ -6,8 +6,8 @@ from .views import CustomUserViewSet, RecipeViewSet
 app_name = 'api'
 
 router_v1 = routers.DefaultRouter()
-router_v1.register('users', CustomUserViewSet)
-router_v1.register('recipes', RecipeViewSet)
+router_v1.register('users', CustomUserViewSet, basename='users')
+router_v1.register('recipes', RecipeViewSet, basename='recipe')
 
 urlpatterns = [
     # path('auth/token/', get_token, name='token'),

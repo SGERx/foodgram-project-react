@@ -1,6 +1,6 @@
 from recipes.models import Ingredient, Recipe, Tag
 from rest_framework import serializers
-from users.models import CustomUser
+from users.models import CustomUser, Follow
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -25,8 +25,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    # role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICE,
-    #                                default='user')
+    is_subscribed = serializers.BooleanField(read_only=True, default=False)
 
     class Meta:
         model = CustomUser
@@ -34,34 +33,24 @@ class CustomUserSerializer(serializers.ModelSerializer):
                   'email',
                   'username',
                   'first_name',
-                  'last_name'
+                  'last_name',
+                  'is_subscribed'
                   )
-        required_fields = ('email', 'username'
-                           )
-        # required_fields = ('email', 'username', 'first_name', 'last_name'
+        # required_fields = ('email', 'username'
         #                    )
 
-# class SignupSerializer(serializers.Serializer):
-#     email = serializers.EmailField(max_length=255, required=True)
-#     username = serializers.CharField(max_length=151, required=True)
-#     first_name = serializers.EmailField(max_length=151, required=True)
-#     last_name = serializers.CharField(max_length=151, required=True)
-#     password = serializers.CharField(max_length=151, required=True)
 
-#     def create(self, validated_data):
+class FollowSerializer(serializers.ModelSerializer):
 
-#         return CustomUser.objects.create(**validated_data)
-
-# class SignupSerializer(serializers.Serializer):
-
-#     class Meta:
-#         model = CustomUser
-#         fields = ('id', 'email', 'username', 'first_name', 'last_name')
+    class Meta:
+        model = Follow
+        fields = ('user', 'author')
 
 
-# class TokenSerializer(serializers.Serializer):
-#     username = serializers.CharField(required=True)
-#     confirmation_code = serializers.CharField(required=True)
+class PasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(required=True)
+    current_password = serializers.CharField(required=True)
 
-#     class Meta:
-#         fields = ('username', 'confirmation_code',)
+    class Meta:
+        model = CustomUser
+        fields = '__all__'
