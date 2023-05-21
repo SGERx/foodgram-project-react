@@ -2,6 +2,8 @@ from django.db import models
 from users.models import CustomUser, Subscribtion
 from django.core.validators import RegexValidator, MinValueValidator
 from django.db.models import UniqueConstraint
+from django.core.files.base import ContentFile
+import base64
 
 
 class Tag(models.Model):
@@ -136,7 +138,7 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f'{self.user} добавил в избранное "{self.recipe}"'
-    
+
 
 class ShoppingCart(models.Model):
     user = models.ForeignKey(
@@ -159,6 +161,6 @@ class ShoppingCart(models.Model):
             UniqueConstraint(fields=['user', 'recipe'],
                              name='unique_shopping_cart')
         ]
-    
+
     def __str__(self):
         return f'{self.user} добавил "{self.recipe}" в Корзину покупок'
