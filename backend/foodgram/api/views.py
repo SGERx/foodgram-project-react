@@ -1,18 +1,24 @@
 import datetime
+import io
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.db.models import Sum
-from django.http import HttpResponse, QueryDict
+from django.http import FileResponse, HttpResponse, QueryDict
 from django.shortcuts import get_object_or_404, render
 from django_filters.rest_framework import DjangoFilterBackend
-from .pagination import CustomPagination
+from foodgram.settings import DEFAULT_FROM_EMAIL
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from users.models import CustomUser, Subscribtion
@@ -26,7 +32,6 @@ from .serializers import (CustomUserSerializer, IngredientSerializer,
                           RecipeFollowSerializer, RecipeGetSerializer,
                           RecipeSerializer, SubscriptionSerializer,
                           TagSerializer)
-from .utils import create_code_and_send_email, delete, post
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
@@ -145,3 +150,98 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             return post(request, pk, ShoppingCart, RecipeFollowSerializer)
         return delete(request, pk, ShoppingCart)
+
+
+class ShoppingCardView(APIView):
+    def get(self, request):
+        user = request.user
+        shopping_list = IngredientInRecipe.objects.filter(
+            recipe__cart__user=user).values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(
+            amount=Sum('amount')
+        ).order_by()
+        font = 'Tantular'
+        pdfmetrics.registerFont(
+            TTFont('Tantular', 'Tantular.ttf', 'UTF-8')
+        )
+        buffer = io.BytesIO()
+        pdf_file = canvas.Canvas(buffer)
+        pdf_file.setFont(font, 24)
+        pdf_file.drawString(
+            150,
+            800,
+            'Список покупок:'
+        )
+        pdf_file.setFont(font, 14)
+        from_bottom = 750
+        for number, ingredient in enumerate(shopping_list, start=1):
+            pdf_file.drawString(
+                50,
+                from_bottom,
+                (f'{number}.  {ingredient["ingredient__name"]} - '
+                 f'{ingredient["amount"]} '
+                 f'{ingredient["ingredient__measurement_unit"]}')
+            )
+            from_bottom -= 20
+            if from_bottom <= 50:
+                from_bottom = 800
+                pdf_file.showPage()
+                pdf_file.setFont(font, 14)
+        pdf_file.showPage()
+        pdf_file.save()
+        buffer.seek(0)
+        return FileResponse(
+            buffer, as_attachment=True, filename='shopping_list.pdf'
+        )
+
+
+def post(request, pk, model, serializer):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    if model.objects.filter(user=request.user, recipe=recipe).exists():
+        return Response(
+            {'errors': 'Рецепт уже есть в избранном/списке покупок'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    model.objects.get_or_create(user=request.user, recipe=recipe)
+    data = serializer(recipe).data
+    return Response(data, status=status.HTTP_201_CREATED)
+
+
+def delete(request, pk, model):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    if model.objects.filter(user=request.user, recipe=recipe).exists():
+        follow = get_object_or_404(model, user=request.user,
+                                   recipe=recipe)
+        follow.delete()
+        return Response(
+            'Рецепт успешно удален из избранного/списка покупок',
+            status=status.HTTP_204_NO_CONTENT
+        )
+    return Response(
+        {'errors': 'Данного рецепта не было в избранном/списке покупок'},
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+
+def recipe_ingredient_create(ingredients_data, models, recipe):
+    bulk_create_data = (
+        models(
+            recipe=recipe,
+            ingredient=ingredient_data['ingredient'],
+            amount=ingredient_data['amount'])
+        for ingredient_data in ingredients_data
+    )
+    models.objects.bulk_create(bulk_create_data)
+
+
+def create_code_and_send_email(user):
+    confirmation_code = default_token_generator.make_token(user)
+    send_mail(
+        subject='Добро пожаловать на проект Foodgram!',
+        from_email=DEFAULT_FROM_EMAIL,
+        recipient_list=(user.email,),
+        message=confirmation_code,
+        fail_silently=False
+    )

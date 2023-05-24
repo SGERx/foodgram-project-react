@@ -12,7 +12,7 @@ from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import CustomUser, Subscribtion
 
-from .utils import recipe_ingredient_create
+from .views import recipe_ingredient_create
 
 
 class Base64ImageField(serializers.ImageField):

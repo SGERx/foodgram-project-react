@@ -5,14 +5,6 @@ from django.db import models
 class CustomUser(AbstractUser):
     """Custom-модель пользователя """
 
-    # USER = 'user'
-    # ADMIN = 'admin'
-
-    # ROLE_CHOICE = (
-    #     (USER, 'Авторизованный пользователь'),
-    #     (ADMIN, 'Администратор'),
-    # )
-
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = [
         'username',
