@@ -1,9 +1,8 @@
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from users.models import CustomUser, Subscribtion
-from django.core.validators import RegexValidator, MinValueValidator
 from django.db.models import UniqueConstraint
-from django.core.files.base import ContentFile
-import base64
+
+from users.models import CustomUser
 
 
 class Tag(models.Model):

@@ -1,12 +1,11 @@
-import datetime
 import io
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Sum
-from django.http import FileResponse, HttpResponse, QueryDict
-from django.shortcuts import get_object_or_404, render
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from foodgram.settings import DEFAULT_FROM_EMAIL
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
@@ -14,20 +13,17 @@ from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
-from rest_framework import filters, mixins, status, viewsets
-from rest_framework.decorators import action, api_view
-from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework_simplejwt.tokens import RefreshToken
 from users.models import CustomUser, Subscribtion
 
 from .filters import IngredientFilter, RecipeFilter
-from .mixins import CreateListDestroyViewSet, ListRetrieveViewSet
+from .mixins import ListRetrieveViewSet
 from .pagination import CustomPagination
-from .permissions import (CreateOrIsAuthorOrReadOnly, IsAdmin,
-                          IsAdminOrReadOnly, IsAuthorOrReadOnly)
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (CustomUserSerializer, IngredientSerializer,
                           RecipeFollowSerializer, RecipeGetSerializer,
                           RecipeSerializer, SubscriptionSerializer,
@@ -110,7 +106,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if is_favorited is not None and int(is_favorited) == 1:
             return queryset.filter(favorites__user=self.request.user)
 
-        is_in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
+        is_in_shopping_cart = self.request.query_params.get(
+            'is_in_shopping_cart')
         if is_in_shopping_cart is not None and int(is_in_shopping_cart) == 1:
             return queryset.filter(cart__user=self.request.user)
 
@@ -152,10 +149,11 @@ class ShoppingCardView(APIView):
     def get(self, request):
         user = request.user
         shopping_list = (IngredientInRecipe.objects
-                        .filter(recipe__cart__user=user)
-                        .values('ingredient__name', 'ingredient__measurement_unit')
-                        .annotate(amount=Sum('amount'))
-                        .order_by())
+                         .filter(recipe__cart__user=user)
+                         .values('ingredient__name',
+                                 'ingredient__measurement_unit')
+                         .annotate(amount=Sum('amount'))
+                         .order_by())
 
         font = 'Tantular'
         pdfmetrics.registerFont(TTFont('Tantular', 'Tantular.ttf', 'UTF-8'))
