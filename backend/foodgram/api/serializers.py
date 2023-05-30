@@ -1,14 +1,8 @@
 import base64
 
 from django.core.files.base import ContentFile
-from django.db import transaction
-from django.db.models import F
-from django.shortcuts import get_object_or_404
 from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
-from rest_framework import serializers, status
-from rest_framework.exceptions import ValidationError
-from rest_framework.fields import IntegerField, SerializerMethodField
-from rest_framework.relations import PrimaryKeyRelatedField
+from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import CustomUser, Subscribtion
 

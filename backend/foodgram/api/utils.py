@@ -1,18 +1,3 @@
-import io
-
-from django.db.models import Sum
-from django.http import FileResponse
-from django.shortcuts import get_object_or_404
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from recipes.models import Recipe, IngredientInRecipe
-
-
 def recipe_ingredient_create(ingredients_data, models, recipe):
     bulk_create_data = (
         models(
