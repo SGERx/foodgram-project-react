@@ -17,7 +17,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*',
                  '127.0.0.1',
-                 'localhost']
+                 'localhost',
+                 'localhost:3000',
+                 '127.0.0.1:3000',
+                 'http://127.0.0.1:3000',
+                 'http://127.0.0.1:3000/',
+                 ]
 
 
 # Application definition
@@ -37,11 +42,13 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'drf_extra_fields',
     'django_extensions',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -143,11 +150,11 @@ REST_FRAMEWORK = {
 }
 
 
-# SIMPLE_JWT = {
-#    # Устанавливаем срок жизни токена
-#    'ACCESS_TOKEN_LIFETIME': timedelta(days=100),
-#    'AUTH_HEADER_TYPES': ('Bearer',),
-# }
+SIMPLE_JWT = {
+   # Устанавливаем срок жизни токена
+   'ACCESS_TOKEN_LIFETIME': timedelta(days=100),
+   'AUTH_HEADER_TYPES': ('Bearer',),
+}
 
 
 # AUTHENTICATION_BACKENDS = [
@@ -159,3 +166,11 @@ REST_FRAMEWORK = {
 
 # AUTHENTICATION_BACKENDS = [
 #     'django.contrib.auth.backends.AllowAllUsersModelBackend']
+
+
+# CORS_ORIGIN_ALLOW_ALL = True
+# CORS_URLS_REGEX = r'^/api/.*$'
+
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:3000',
+# ]

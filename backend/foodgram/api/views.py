@@ -37,16 +37,16 @@ from .serializers import (CustomUserSerializer, IngredientSerializer,
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
-    pagination_class = CustomPagination
 
-    @action(detail=False, methods=['get'])
+    @action(['get'], detail=False)
     def me(self, request):
-        serializer = CustomUserSerializer(request.user)
+        user = get_object_or_404(CustomUser, pk=request.user.pk)
+        serializer = CustomUserSerializer(user)
         return Response(serializer.data)
 
     def perform_create(self, serializer):
-        if 'password' in serializer.validated_data:
-            password = make_password(serializer.validated_data['password'])
+        if 'password' in self.request.data:
+            password = make_password(self.request.data['password'])
             serializer.save(password=password)
         else:
             serializer.save()
@@ -220,17 +220,6 @@ def delete(request, pk, model):
         {'errors': 'Рецепта не было в избранном/списке покупок'},
         status=status.HTTP_400_BAD_REQUEST
     )
-
-
-def recipe_ingredient_create(ingredients_data, model, recipe):
-    bulk_create_data = []
-    for ingredient_data in ingredients_data:
-        ingredient = ingredient_data['ingredient']
-        amount = ingredient_data['amount']
-        bulk_create_data.append(
-            model(recipe=recipe, ingredient=ingredient, amount=amount))
-
-    model.objects.bulk_create(bulk_create_data)
 
 
 def create_code_and_send_email(user):
