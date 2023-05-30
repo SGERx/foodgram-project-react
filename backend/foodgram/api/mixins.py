@@ -8,3 +8,9 @@ class CreateListDestroyViewSet(mixins.CreateModelMixin,
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+
+
+class ListRetrieveViewSet(mixins.RetrieveModelMixin,
+                          mixins.ListModelMixin,
+                          viewsets.GenericViewSet):
+    pass

@@ -1,14 +1,24 @@
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
-from foodgram.settings import DEFAULT_FROM_EMAIL
+import io
+
+from django.db.models import Sum
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from recipes.models import Recipe, IngredientInRecipe
 
 
-def create_code_and_send_email(user):
-    confirmation_code = default_token_generator.make_token(user)
-    send_mail(
-        subject='Добро пожаловать на проект YaMDb!',
-        from_email=DEFAULT_FROM_EMAIL,
-        recipient_list=(user.email,),
-        message=confirmation_code,
-        fail_silently=False
+def recipe_ingredient_create(ingredients_data, models, recipe):
+    bulk_create_data = (
+        models(
+            recipe=recipe,
+            ingredient=ingredient_data['ingredient'],
+            amount=ingredient_data['amount'])
+        for ingredient_data in ingredients_data
     )
+    models.objects.bulk_create(bulk_create_data)
