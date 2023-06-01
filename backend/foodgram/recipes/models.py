@@ -1,17 +1,18 @@
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import UniqueConstraint
-
 from users.models import CustomUser
+
+MAX_CHAR_LENGTH = 200
 
 
 class Tag(models.Model):
 
     name = models.CharField(verbose_name='название',
-                            max_length=200,
+                            max_length=MAX_CHAR_LENGTH,
                             unique=True)
     color = models.CharField(
-        'Цветовой HEX-код',
+        verbose_name='Цветовой HEX-код',
         unique=True,
         max_length=7,
         validators=[
@@ -23,7 +24,7 @@ class Tag(models.Model):
     )
     slug = models.SlugField(verbose_name='Слаг',
                             unique=True,
-                            max_length=200)
+                            max_length=MAX_CHAR_LENGTH)
 
     class Meta:
         verbose_name = 'Тег'
@@ -35,10 +36,10 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     name = models.CharField(verbose_name='Название',
-                            max_length=200,
+                            max_length=MAX_CHAR_LENGTH,
                             )
     measurement_unit = models.CharField(verbose_name='Единица измерения',
-                                        max_length=200)
+                                        max_length=MAX_CHAR_LENGTH)
 
     class Meta:
         verbose_name = 'ингредиент'
@@ -51,7 +52,7 @@ class Ingredient(models.Model):
 
 class Recipe(models.Model):
     name = models.CharField(verbose_name='название',
-                            max_length=200,
+                            max_length=MAX_CHAR_LENGTH,
                             )
     author = models.ForeignKey(CustomUser,
                                on_delete=models.SET_NULL,
@@ -77,7 +78,7 @@ class Recipe(models.Model):
         verbose_name='тег',)
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['name']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -98,7 +99,7 @@ class IngredientInRecipe(models.Model):
         verbose_name='Ингредиент',
     )
     amount = models.PositiveSmallIntegerField(
-        'Количество',
+        verbose_name='Количество',
         validators=[MinValueValidator(1, message='Минимальное количество 1!')]
     )
 
