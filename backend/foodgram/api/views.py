@@ -10,6 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from foodgram.settings import DEFAULT_FROM_EMAIL
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
+from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
@@ -146,28 +147,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class ShoppingCardView(APIView):
-    def get(self, request):
-        user = request.user
-        shopping_list = (IngredientInRecipe.objects
-                         .filter(recipe__cart__user=user)
-                         .values('ingredient__name',
-                                 'ingredient__measurement_unit')
-                         .annotate(amount=Sum('amount'))
-                         .order_by())
 
+    def generate_shopping_list(shopping_list):
         font = 'Tantular'
         pdfmetrics.registerFont(TTFont('Tantular', 'Tantular.ttf', 'UTF-8'))
 
         buffer = io.BytesIO()
-        pdf_file = canvas.Canvas(buffer)
-
-        pdf_file.setPageSize((595.27, 841.89))
+        pdf_file = canvas.Canvas(buffer, pagesize=A4)
 
         pdf_file.setFont(font, 24)
-        pdf_file.drawString(150, 770, 'Shopping list:')
+        pdf_file.drawString(150, 750, 'Shopping list:')
         pdf_file.setFont(font, 14)
 
-        from_bottom = 750
+        from_bottom = 730
         for number, ingredient in enumerate(shopping_list, start=1):
             ingredient_name = ingredient['ingredient__name']
             amount = ingredient['amount']
@@ -177,17 +169,34 @@ class ShoppingCardView(APIView):
             from_bottom -= 20
 
             if from_bottom <= 50:
-                from_bottom = 800
                 pdf_file.showPage()
                 pdf_file.setFont(font, 14)
+                from_bottom = 770
 
         pdf_file.showPage()
         pdf_file.save()
+
+        return buffer
+
+
+
+    def get(self, request):
+        user = request.user
+        shopping_list = (IngredientInRecipe.objects
+                         .filter(recipe__cart__user=user)
+                         .values('ingredient__name',
+                                 'ingredient__measurement_unit')
+                         .annotate(amount=Sum('amount'))
+                         .order_by())
+
+        buffer = generate_shopping_list(shopping_list)
 
         buffer.seek(0)
         return FileResponse(
             buffer, as_attachment=True, filename='shopping_list.pdf'
         )
+
+
 
 
 def post(request, pk, model, serializer):

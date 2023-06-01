@@ -2,31 +2,19 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from dotenv import load_dotenv
+
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+DEBUG = os.getenv('DEBUG', default=True)
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@^$asdiics73afynwdi'
-'v1!gy!ga3t@&@1crpy866hd(4y3@=vn'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='*').split(',')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*',
-                 '127.0.0.1',
-                 'localhost',
-                 'localhost:3000',
-                 '127.0.0.1:3000',
-                 'http://127.0.0.1:3000',
-                 'http://127.0.0.1:3000/',
-                 ]
-
-
-# Application definition
+# Application
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -79,7 +67,7 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
 
 DATABASES = {
     'default': {
@@ -97,7 +85,6 @@ DATABASES = {
 
 
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -121,9 +108,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
 
@@ -133,12 +119,10 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -158,26 +142,6 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-   # Устанавливаем срок жизни токена
    'ACCESS_TOKEN_LIFETIME': timedelta(days=100),
    'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
-
-# AUTHENTICATION_BACKENDS = [
-#      'django.contrib.auth.backends.ModelBackend',
-#      'path.to.your.EmailBackend',
-# ]
-
-# AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
-
-# AUTHENTICATION_BACKENDS = [
-#     'django.contrib.auth.backends.AllowAllUsersModelBackend']
-
-
-# CORS_ORIGIN_ALLOW_ALL = True
-# CORS_URLS_REGEX = r'^/api/.*$'
-
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:3000',
-# ]
