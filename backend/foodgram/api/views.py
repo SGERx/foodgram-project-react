@@ -19,6 +19,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from users.models import CustomUser, Subscribtion
 
 from .filters import IngredientFilter, RecipeFilter
@@ -48,37 +49,89 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
 
-    @action(detail=True, methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated])
-    def subscribe(self, request, pk=None):
-        user = request.user
-        author = get_object_or_404(CustomUser, pk=pk)
+    # @action(detail=True, methods=['post', 'delete'],
+    #         permission_classes=[IsAuthenticated])
+    # def subscribe(self, request, pk=None):
+    #     user = request.user
+    #     author = get_object_or_404(CustomUser, pk=pk)
 
-        if request.method == 'POST':
-            serializer = SubscriptionSerializer(
-                data={'author': author.pk}, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     if request.method == 'POST':
+    #         serializer = SubscriptionSerializer(
+    #             data={'author': author.pk}, context={'request': request})
+    #         serializer.is_valid(raise_exception=True)
+    #         serializer.save(user=user)
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        if request.method == 'DELETE':
-            subscription = get_object_or_404(
-                Subscribtion, user=user, author=author)
-            subscription.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+    #     if request.method == 'DELETE':
+    #         subscription = get_object_or_404(
+    #             Subscribtion, user=user, author=author)
+    #         subscription.delete()
+    #         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        detail=False,
-        permission_classes=[IsAuthenticated]
-    )
-    def subscribtions(self, request):
-        user = request.user
-        queryset = CustomUser.objects.filter(subscribing__user=user)
-        pages = self.paginate_queryset(queryset)
-        serializer = SubscriptionSerializer(pages,
-                                            many=True,
-                                            context={'request': request})
-        return self.get_paginated_response(serializer.data)
+    # @action(
+    #     detail=False,
+    #     permission_classes=[IsAuthenticated]
+    # )
+    # def subscribtions(self, request):
+    #     user = request.user
+    #     queryset = Subscribtion.objects.filter(user=user)
+    #     pages = self.paginate_queryset(queryset)
+    #     serializer = SubscriptionSerializer(pages,
+    #                                         many=True,
+    #                                         context={'request': request})
+    #     return self.get_paginated_response(serializer.data)
+
+
+class SubscriptionView(APIView):
+    serializer_class = SubscriptionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, user_id):
+        if user_id == request.user.id:
+            return Response(
+                {'error': 'You can"t subscribe on yourself'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if Subscribtion.objects.filter(
+            user=request.user,
+            author_id=user_id,
+        ).exists():
+            return Response(
+                {'error': 'You are already subscribed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        Subscribtion.objects.create(
+            user=request.user,
+            author_id=user_id
+        )
+        return Response(
+            self.serializer_class(
+                get_object_or_404(CustomUser, id=user_id),
+                context={'request': request}
+            ).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    def delete(self, request, user_id):
+        subscribtion = Subscribtion.objects.filter(
+            user=request.user,
+            author_id=user_id,
+        )
+        if subscribtion.exists():
+            subscribtion.delete()
+        return Response(
+                {'error': 'You are not subscribed on this user'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class SubscriptionListView(ListAPIView):
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated, ]
+    pagination_class = CustomPagination
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(author__user=self.request.user)
 
 
 class TagViewSet(ListRetrieveViewSet):
@@ -99,20 +152,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     pagination_class = CustomPagination
+    permission_classes = (IsAuthorOrReadOnly, )
+    serializer_class = RecipeSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         is_favorited = self.request.query_params.get('is_favorited')
-
         if is_favorited is not None and int(is_favorited) == 1:
-            return queryset.filter(favorites__user=self.request.user)
-
+            return Recipe.objects.filter(favorites__user=self.request.user)
         is_in_shopping_cart = self.request.query_params.get(
             'is_in_shopping_cart')
         if is_in_shopping_cart is not None and int(is_in_shopping_cart) == 1:
-            return queryset.filter(cart__user=self.request.user)
-
-        return queryset
+            return Recipe.objects.filter(shopping_cart__user=self.request.user)
+        return Recipe.objects.all()
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -178,12 +229,10 @@ class ShoppingCardView(APIView):
 
         return buffer
 
-
-
     def get(self, request):
         user = request.user
         shopping_list = (IngredientInRecipe.objects
-                         .filter(recipe__cart__user=user)
+                         .filter(recipe__shopping_cart__user=user)
                          .values('ingredient__name',
                                  'ingredient__measurement_unit')
                          .annotate(amount=Sum('amount'))
@@ -195,8 +244,6 @@ class ShoppingCardView(APIView):
         return FileResponse(
             buffer, as_attachment=True, filename='shopping_list.pdf'
         )
-
-
 
 
 def post(request, pk, model, serializer):

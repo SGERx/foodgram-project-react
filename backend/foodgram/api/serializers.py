@@ -5,7 +5,7 @@ from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import CustomUser, Subscribtion
-
+from .permissions import IsAuthorOrReadOnly
 from .utils import recipe_ingredient_create
 
 
@@ -125,11 +125,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 class RecipeGetSerializer(serializers.ModelSerializer):
     image = Base64ImageField(max_length=None, use_url=True)
-    ingredients = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField(read_only=True)
     author = CustomUserSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
+    permission_classes = (IsAuthorOrReadOnly, )
 
     class Meta:
         model = Recipe
@@ -138,19 +139,19 @@ class RecipeGetSerializer(serializers.ModelSerializer):
                   'image')
         read_only_fields = ('id', 'author',)
 
-    def is_recipe_favorited(self, obj):
+    def get_is_favorited(self, obj):
         user = self.context['request'].user
         is_favorite = obj.favorites.filter(
             user=user).exists() if user.is_authenticated else False
         return is_favorite
 
-    def is_recipe_in_cart(self, obj):
+    def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
         is_in_cart = user.shopping_cart.filter(
             recipe=obj).exists() if user.is_authenticated else False
         return is_in_cart
 
-    def retrieve_recipe_ingredients(self, obj):
+    def get_ingredients(self, obj):
         recipe_ingredients = IngredientInRecipe.objects.filter(recipe=obj)
         serialized_data = IngredientRecipeGetSerializer(
             recipe_ingredients, many=True).data
