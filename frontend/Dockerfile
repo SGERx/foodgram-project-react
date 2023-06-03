@@ -13,6 +13,8 @@ WORKDIR /app
 
 COPY package*.json .
 
+RUN npm i
+
 RUN npm install
 
 RUN npm audit fix --force
