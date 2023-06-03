@@ -15,6 +15,10 @@ COPY package*.json .
 
 RUN npm install
 
+RUN npm audit fix --force
+
+RUN npm audit fix --force
+
 COPY . .
 
 RUN npm run build
