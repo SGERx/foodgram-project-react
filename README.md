@@ -3,6 +3,7 @@
 ### _Продуктовый помощник_
 
 
+
 ### Технологии:
 
 Python, Django, Django Rest Framework, Docker, Gunicorn, NGINX, PostgreSQL, Yandex Cloud, Continuous Integration, Continuous Deployment
