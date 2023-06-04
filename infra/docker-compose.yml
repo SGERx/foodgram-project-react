@@ -1,7 +1,6 @@
 version: '2.6'
 
 services:
-
   db:
     image: postgres:13.0-alpine
     volumes:
@@ -9,7 +8,6 @@ services:
     env_file:
       - ./.env
     restart: always
-
   backend:
     image: sgerx/foodgram-backend:latest
     restart: always
@@ -21,12 +19,10 @@ services:
       - db
     env_file:
       - ./.env
-
   frontend:
     image: sgerx/foodgram-frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
-
   nginx:
     image: nginx:1.21.3-alpine
     ports:
@@ -43,7 +39,6 @@ services:
     depends_on:
       - backend
     restart: always
-
 volumes:
   static_value:
   media_value:
