@@ -57,10 +57,6 @@ jobs:
         passphrase: ${{ secrets.PASSPHRASE }}
         script: |
 
-          cd ..
-          cd ..
-          cd infra/
-
           sudo touch .env
           sudo chmod 666 .env
           sudo echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env

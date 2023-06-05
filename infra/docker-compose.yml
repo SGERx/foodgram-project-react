@@ -1,47 +1,44 @@
 version: '3.8'
 services:
 
-  frontend:
-    image: sgerx/foodgram-frontend:latest
-    volumes:
-      - ../frontend/:/app/result_build/
-
   db:
     image: postgres:13.0-alpine
     volumes:
-      - postgres:/var/lib/postgres/data/
+      - db_value:/var/lib/postgresql/data/
     env_file:
       - ./.env
-
-  nginx:
-    image: nginx:1.19.3
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ../frontend/build:/usr/share/nginx/html/
-      - docs:/usr/share/nginx/html/api/docs/
-      - ./ssl/:/etc/nginx/ssl/
-      - static_value:/var/html/back_static/
-      - media_value:/var/html/back_media/
-    depends_on:
-      - backend
 
   backend:
     image: sgerx/foodgram-backend:latest
     restart: always
     volumes:
-      -  static_value:/app/back_static/
-      -  media_value:/app/back_media/
-      -  docs:/app/api/docs/
+      - static_value:/app/static/
+      - media_value:/app/media/
     depends_on:
       - db
     env_file:
       - ./.env
 
+  frontend:
+    image: sgerx/foodgram-frontend:latest
+    volumes:
+      - ../frontend/:/app/result_build/
+
+  nginx:
+    image: nginx:1.19.3
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ../frontend/build:/usr/share/nginx/html/
+      - ../docs/:/usr/share/nginx/html/api/docs/
+      - static_value:/var/html/static/
+      - media_value:/var/html/media/
+    depends_on:
+      - backend
+      - frontend
+
 volumes:
+  db_value:
   static_value:
   media_value:
-  postgres:
-  docs:
