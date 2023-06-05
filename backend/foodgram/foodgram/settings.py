@@ -8,7 +8,8 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+# SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = "django-insecure-@^$asdiics73afynwdiv1!gy!ga3t@&@1crpy866hd(4y3@=vn"
 
 DEBUG = os.getenv('DEBUG', default=True)
 
@@ -76,10 +77,10 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', default='postgres'),
         'USER': os.getenv('POSTGRES_USER', default='postgres'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='root'),
-        # 'HOST': os.getenv('DB_HOST', default='db'),
-        'HOST': os.getenv('DB_HOST', default='localhost'),
-        # 'PORT': os.getenv('DB_PORT', default=5432)
-        'PORT': os.getenv('DB_PORT', default=5433)
+        # 'HOST': os.getenv('DB_HOST', default='localhost'),
+        'HOST': os.getenv('DB_HOST', default='db'),
+        # 'PORT': os.getenv('DB_PORT', default=5433)
+        'PORT': os.getenv('DB_PORT', default=5432)
     }
 }
 
