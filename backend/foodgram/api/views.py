@@ -1,26 +1,28 @@
 import io
-
+from datetime import datetime
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import default_token_generator
+from django.core.files.base import ContentFile
 from django.core.mail import send_mail
 from django.db.models import Sum
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from foodgram.settings import DEFAULT_FROM_EMAIL
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
+from rest_framework.status import HTTP_400_BAD_REQUEST
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
-from users.models import CustomUser, Subscribtion
+from users.models import CustomUser, Subscription
 
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import ListRetrieveViewSet
@@ -28,13 +30,23 @@ from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (CustomUserSerializer, IngredientSerializer,
                           RecipeFollowSerializer, RecipeGetSerializer,
-                          RecipeSerializer, SubscriptionSerializer,
+                          RecipeWriteSerializer, SubscriptionSerializer,
                           TagSerializer)
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+
+    def get_permissions(self):
+        if self.action == 'create' or self.action == 'list':
+            permission_classes = [AllowAny]
+        elif self.action == 'me' or self.action == 'retrieve':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsAuthenticated]
+
+        return [permission() for permission in permission_classes]
 
     @action(['get'], detail=False)
     def me(self, request):
@@ -49,38 +61,6 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
 
-    # @action(detail=True, methods=['post', 'delete'],
-    #         permission_classes=[IsAuthenticated])
-    # def subscribe(self, request, pk=None):
-    #     user = request.user
-    #     author = get_object_or_404(CustomUser, pk=pk)
-
-    #     if request.method == 'POST':
-    #         serializer = SubscriptionSerializer(
-    #             data={'author': author.pk}, context={'request': request})
-    #         serializer.is_valid(raise_exception=True)
-    #         serializer.save(user=user)
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    #     if request.method == 'DELETE':
-    #         subscription = get_object_or_404(
-    #             Subscribtion, user=user, author=author)
-    #         subscription.delete()
-    #         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    # @action(
-    #     detail=False,
-    #     permission_classes=[IsAuthenticated]
-    # )
-    # def subscribtions(self, request):
-    #     user = request.user
-    #     queryset = Subscribtion.objects.filter(user=user)
-    #     pages = self.paginate_queryset(queryset)
-    #     serializer = SubscriptionSerializer(pages,
-    #                                         many=True,
-    #                                         context={'request': request})
-    #     return self.get_paginated_response(serializer.data)
-
 
 class SubscriptionView(APIView):
     serializer_class = SubscriptionSerializer
@@ -92,7 +72,7 @@ class SubscriptionView(APIView):
                 {'error': 'You can"t subscribe on yourself'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        if Subscribtion.objects.filter(
+        if Subscription.objects.filter(
             user=request.user,
             author_id=user_id,
         ).exists():
@@ -100,30 +80,40 @@ class SubscriptionView(APIView):
                 {'error': 'You are already subscribed'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        Subscribtion.objects.create(
+        sub = Subscription.objects.create(
             user=request.user,
             author_id=user_id
         )
         return Response(
             self.serializer_class(
-                get_object_or_404(CustomUser, id=user_id),
-                context={'request': request}
+                sub,
+                    context={'request': request}
             ).data,
             status=status.HTTP_201_CREATED
         )
 
     def delete(self, request, user_id):
-        subscribtion = Subscribtion.objects.filter(
+        if not request.user.is_authenticated:
+            return Response(
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        subscription = Subscription.objects.filter(
             user=request.user,
             author_id=user_id,
         )
-        if subscribtion.exists():
-            subscribtion.delete()
-        return Response(
-                {'error': 'You are not subscribed on this user'},
-                status=status.HTTP_400_BAD_REQUEST
+        if subscription.exists():
+            subscription.delete()
+            return Response(
+                status=status.HTTP_204_NO_CONTENT
             )
-
+        if not subscription.exists():
+            return Response(
+                status=status.HTTP_404_NOT_FOUND
+            )
+        return Response(
+            status=status.HTTP_400_BAD_REQUEST
+        )
+   
 
 class SubscriptionListView(ListAPIView):
     serializer_class = SubscriptionSerializer
@@ -131,7 +121,17 @@ class SubscriptionListView(ListAPIView):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return CustomUser.objects.filter(author__user=self.request.user)
+        return Subscription.objects.filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class TagViewSet(ListRetrieveViewSet):
@@ -152,8 +152,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     pagination_class = CustomPagination
-    permission_classes = (IsAuthorOrReadOnly, )
-    serializer_class = RecipeSerializer
+    permission_classes = (AllowAny, )
+    # serializer_class = RecipeWriteSerializer
+
+    def get_permissions(self):
+        if self.action == 'create' or self.action == 'update':
+            return (IsAuthorOrReadOnly(),)
+        return super().get_permissions()
 
     def get_queryset(self):
         is_favorited = self.request.query_params.get('is_favorited')
@@ -173,115 +178,82 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+        # return Response({'success': 'Рецепт добавлен!'},
+        #                 status=status.HTTP_201_CREATED)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return RecipeGetSerializer
-        return RecipeSerializer
+        return RecipeWriteSerializer
 
-    def get_permissions(self):
-        if self.action != 'create':
-            return (IsAuthorOrReadOnly(),)
-        return super().get_permissions()
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
-    @action(detail=True, methods=['POST', 'DELETE'],)
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
+    )
     def favorite(self, request, pk):
-        if self.request.method == 'POST':
-            return post(request, pk, Favorite, RecipeFollowSerializer)
-        return delete(request, pk, Favorite)
+        if request.method == 'POST':
+            return self.add_to(Favorite, request.user, pk)
+        else:
+            return self.delete_from(Favorite, request.user, pk)
 
-    @action(detail=True, methods=['POST', 'DELETE'],)
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
+    )
     def shopping_cart(self, request, pk):
         if request.method == 'POST':
-            return post(request, pk, ShoppingCart, RecipeFollowSerializer)
-        return delete(request, pk, ShoppingCart)
+            return self.add_to(ShoppingCart, request.user, pk)
+        else:
+            return self.delete_from(ShoppingCart, request.user, pk)
 
 
-class ShoppingCardView(APIView):
-
-    def generate_shopping_list(shopping_list):
-        font = 'Tantular'
-        pdfmetrics.registerFont(TTFont('Tantular', 'Tantular.ttf', 'UTF-8'))
-
-        buffer = io.BytesIO()
-        pdf_file = canvas.Canvas(buffer, pagesize=A4)
-
-        pdf_file.setFont(font, 24)
-        pdf_file.drawString(150, 750, 'Shopping list:')
-        pdf_file.setFont(font, 14)
-
-        from_bottom = 730
-        for number, ingredient in enumerate(shopping_list, start=1):
-            ingredient_name = ingredient['ingredient__name']
-            amount = ingredient['amount']
-            measurement_unit = ingredient['ingredient__measurement_unit']
-            line = f"{number}. {ingredient_name} - {amount} {measurement_unit}"
-            pdf_file.drawString(50, from_bottom, line)
-            from_bottom -= 20
-
-            if from_bottom <= 50:
-                pdf_file.showPage()
-                pdf_file.setFont(font, 14)
-                from_bottom = 770
-
-        pdf_file.showPage()
-        pdf_file.save()
-
-        return buffer
-
-    def get(self, request):
+    @action(
+        detail=False,
+        permission_classes=[IsAuthenticated]
+    )
+    def download_shopping_cart(self, request):
         user = request.user
-        shopping_list = (IngredientInRecipe.objects
-                         .filter(recipe__shopping_cart__user=user)
-                         .values('ingredient__name',
-                                 'ingredient__measurement_unit')
-                         .annotate(amount=Sum('amount'))
-                         .order_by())
+        if not user.shopping_cart.exists():
+            return Response(status=HTTP_400_BAD_REQUEST)
 
-        buffer = generate_shopping_list(shopping_list)
+        ingredients = IngredientInRecipe.objects.filter(
+            recipe__shopping_cart__user=request.user
+        ).values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(amount=Sum('amount'))
 
-        buffer.seek(0)
-        return FileResponse(
-            buffer, as_attachment=True, filename='shopping_list.pdf'
+        today = datetime.today()
+        shopping_list = (
+            f'Список покупок для: {user.get_full_name()}\n\n'
+            f'Дата: {today:%Y-%m-%d}\n\n'
         )
+        shopping_list += '\n'.join([
+            f'- {ingredient["ingredient__name"]} '
+            f'({ingredient["ingredient__measurement_unit"]})'
+            f' - {ingredient["amount"]}'
+            for ingredient in ingredients
+        ])
+        shopping_list += f'\n\nFoodgram ({today:%Y})'
 
+        filename = f'{user.username}_shopping_list.txt'
+        response = HttpResponse(shopping_list, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename={filename}'
 
-def post(request, pk, model, serializer):
-    recipe = get_object_or_404(Recipe, pk=pk)
-    user = request.user
-    if model.objects.filter(user=user, recipe=recipe).exists():
-        return Response(
-            {'errors': 'Рецепт уже есть в избранном/списке покупок'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    model.objects.create(user=user, recipe=recipe)
-    serialized_recipe = serializer(recipe).data
-    return Response(serialized_recipe, status=status.HTTP_201_CREATED)
-
-
-def delete(request, pk, model):
-    recipe = get_object_or_404(Recipe, pk=pk)
-    user = request.user
-    if model.objects.filter(user=user, recipe=recipe).exists():
-        follow = get_object_or_404(model, user=user, recipe=recipe)
-        follow.delete()
-        return Response(
-            'Рецепт успешно удален из избранного/списка покупок',
-            status=status.HTTP_204_NO_CONTENT
-        )
-    return Response(
-        {'errors': 'Рецепта не было в избранном/списке покупок'},
-        status=status.HTTP_400_BAD_REQUEST
-    )
-
-
-def create_code_and_send_email(user):
-    confirmation_code = default_token_generator.make_token(user)
-    send_mail(
-        subject='Добро пожаловать на проект Foodgram!',
-        from_email=DEFAULT_FROM_EMAIL,
-        recipient_list=(user.email,),
-        message=confirmation_code,
-        fail_silently=False
-    )
+        return response

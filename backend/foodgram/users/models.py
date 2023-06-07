@@ -33,7 +33,7 @@ class CustomUser(AbstractUser):
         return self.username
 
 
-class Subscribtion(models.Model):
+class Subscription(models.Model):
     user = models.ForeignKey(
         CustomUser,
         related_name='subscriber',
@@ -51,7 +51,7 @@ class Subscribtion(models.Model):
         ordering = ['user', 'author']
         constraints = [
             models.UniqueConstraint(fields=['user', 'author'],
-                                    name='unique_subscribtion')
+                                    name='unique_subscription')
         ]
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
