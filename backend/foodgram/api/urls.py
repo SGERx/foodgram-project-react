@@ -2,6 +2,7 @@ from api.views import SubscriptionListView, SubscriptionView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
+from djoser.views import SetPasswordView
 from rest_framework import routers
 
 from .views import (CustomUserViewSet, IngredientViewSet, RecipeViewSet,
@@ -26,4 +27,5 @@ urlpatterns = [
     path('', include(router_v1.urls)),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
+    path('auth/set_password/', SetPasswordView.as_view(), name='set_password'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
