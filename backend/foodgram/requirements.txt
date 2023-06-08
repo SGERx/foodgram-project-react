@@ -8,7 +8,6 @@ charset-normalizer==2.0.12
 colorama==0.4.6
 coreapi==2.3.3
 coreschema==0.0.4
-cors==1.0.1
 cryptography==40.0.2
 defusedxml==0.7.1
 Django==3.2
