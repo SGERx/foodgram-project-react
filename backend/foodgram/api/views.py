@@ -26,23 +26,33 @@ from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (CustomUserSerializer, IngredientSerializer,
                           RecipeFollowSerializer, RecipeGetSerializer,
-                          RecipeWriteSerializer, SubscriptionSerializer,
-                          TagSerializer)
+                          RecipeWriteSerializer, SetPasswordSerializer,
+                          SubscriptionSerializer, TagSerializer)
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
 
-    def get_permissions(self):
-        if self.action == 'create' or self.action == 'list':
-            permission_classes = [AllowAny]
-        elif self.action == 'me' or self.action == 'retrieve':
-            permission_classes = [IsAuthenticated]
+    # def get_permissions(self):
+    #     if self.action == 'create' or self.action == 'list':
+    #         permission_classes = [AllowAny]
+    #     elif self.action == 'me' or self.action == 'retrieve':
+    #         permission_classes = [IsAuthenticated]
+    #     else:
+    #         permission_classes = [IsAuthenticated]
+
+    #     return [permission() for permission in permission_classes]
+
+    @action(detail=False, methods=['post'])
+    def set_password(self, request):
+        serializer = SetPasswordSerializer(data=request.data, user=request.user, context={'user': request.user})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': 'password set'})
         else:
-            permission_classes = [IsAuthenticated]
-
-        return [permission() for permission in permission_classes]
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(['get'], detail=False)
     def me(self, request):

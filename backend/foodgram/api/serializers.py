@@ -1,16 +1,44 @@
 import base64
 
+from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
 from rest_framework import serializers
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import CustomUser, Subscription
-from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from .permissions import IsAuthorOrReadOnly
 from .utils import recipe_ingredient_create
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+from django.contrib.auth import password_validation
+from rest_framework import serializers
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(SetPasswordSerializer, self).__init__(*args, **kwargs)
+
+    def validate_current_password(self, value):
+        if not self.user.check_password(value):
+            raise serializers.ValidationError("The current password is incorrect.")
+        return value
+
+    def validate_new_password(self, value):
+        password_validation.validate_password(value)
+        return value
+
+    def save(self, **kwargs):
+        user = self.user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
 
 
 class Base64ImageField(serializers.ImageField):

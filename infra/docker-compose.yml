@@ -16,8 +16,8 @@ services:
     image: sgerx/foodgram-backend:latest
     restart: always
     volumes:
-      - static_value:/code/static_backend/
-      - media_value:/code/media/
+      - static_value:/app/static/
+      - media_value:/app/media/
     depends_on:
       - db
     env_file:
