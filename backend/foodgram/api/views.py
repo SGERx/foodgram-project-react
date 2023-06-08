@@ -47,8 +47,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def set_password(self, request):
-        user = request.user
-        serializer = SetPasswordSerializer(user, data=request.data)
+        serializer = SetPasswordSerializer(data=request.data, user=request.user, context={'user': request.user})
         if serializer.is_valid():
             serializer.save()
             return Response({'status': 'password set'})

@@ -16,14 +16,17 @@ User = get_user_model()
 from django.contrib.auth import password_validation
 from rest_framework import serializers
 
-class SetPasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(write_only=True, required=True)
-    new_password = serializers.CharField(write_only=True, required=True)
-    new_password_confirm = serializers.CharField(write_only=True, required=True)
 
-    def validate_old_password(self, value):
-        user = self.context['user']
-        if not user.check_password(value):
+class SetPasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(SetPasswordSerializer, self).__init__(*args, **kwargs)
+
+    def validate_current_password(self, value):
+        if not self.user.check_password(value):
             raise serializers.ValidationError("The current password is incorrect.")
         return value
 
@@ -31,17 +34,11 @@ class SetPasswordSerializer(serializers.Serializer):
         password_validation.validate_password(value)
         return value
 
-    def validate(self, attrs):
-        if attrs['new_password'] != attrs['new_password_confirm']:
-            raise serializers.ValidationError("New password fields didn't match.")
-        return attrs
-
     def save(self, **kwargs):
-        user = self.context['user']
+        user = self.user
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user
-
 
 
 class Base64ImageField(serializers.ImageField):
