@@ -25,7 +25,7 @@ urlpatterns = [
          SubscriptionView.as_view(),
          name='subscribe'),
     path('', include(router_v1.urls)),
-    path('auth/set_password/', UserViewSet.as_view({'post': 'set_password'}), name='set_password'),
+    path('auth/set_password/', CustomUserViewSet.as_view({'post': 'set_password'}), name='set_password'),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

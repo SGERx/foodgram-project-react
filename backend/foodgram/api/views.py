@@ -26,8 +26,8 @@ from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (CustomUserSerializer, IngredientSerializer,
                           RecipeFollowSerializer, RecipeGetSerializer,
-                          RecipeWriteSerializer, SubscriptionSerializer,
-                          TagSerializer)
+                          RecipeWriteSerializer, SetPasswordSerializer,
+                          SubscriptionSerializer, TagSerializer)
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
@@ -44,6 +44,16 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     #         permission_classes = [IsAuthenticated]
 
     #     return [permission() for permission in permission_classes]
+
+    @action(detail=False, methods=['post'])
+    def set_password(self, request):
+        user = request.user
+        serializer = SetPasswordSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': 'password set'})
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(['get'], detail=False)
     def me(self, request):

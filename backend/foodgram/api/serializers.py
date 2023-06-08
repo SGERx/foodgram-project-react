@@ -1,16 +1,38 @@
 import base64
 
+from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
 from rest_framework import serializers
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.validators import UniqueTogetherValidator
 from users.models import CustomUser, Subscription
-from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from .permissions import IsAuthorOrReadOnly
 from .utils import recipe_ingredient_create
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+from django.contrib.auth import password_validation
+from rest_framework import serializers
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(required=True, write_only=True,
+                                     validators=[password_validation.validate_password])
+    confirm_password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['confirm_password']:
+            raise serializers.ValidationError("Password fields didn't match.")
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context['user']
+        user.set_password(self.validated_data['password'])
+        user.save()
+        return user
+
 
 
 class Base64ImageField(serializers.ImageField):
