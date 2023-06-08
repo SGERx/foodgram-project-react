@@ -27,5 +27,5 @@ urlpatterns = [
     path('', include(router_v1.urls)),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
-    path('auth/set_password/', UserViewSet.as_view(), name='set_password'),
+    path('auth/set_password/', UserViewSet.as_view({'post': 'set_password'}), name='set_password'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
