@@ -33,6 +33,7 @@ from .serializers import (CustomUserSerializer, IngredientSerializer,
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
 
     # def get_permissions(self):
     #     if self.action == 'create' or self.action == 'list':
