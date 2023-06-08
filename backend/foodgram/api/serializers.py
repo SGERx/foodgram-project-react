@@ -14,7 +14,6 @@ from .utils import recipe_ingredient_create
 User = get_user_model()
 
 from django.contrib.auth import password_validation
-from django.contrib.auth.password_validation import CurrentPasswordValidator
 from rest_framework import serializers
 
 class SetPasswordSerializer(serializers.Serializer):
