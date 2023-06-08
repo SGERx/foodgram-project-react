@@ -46,7 +46,7 @@ packaging==23.0
 pep8-naming==0.13.3
 Pillow==9.2.0
 pluggy==0.13.1
-psycopg2==2.9.6
+psycopg2
 py==1.11.0
 pyaes==1.6.1
 pycairo==1.23.0
