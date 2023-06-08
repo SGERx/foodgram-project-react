@@ -34,15 +34,15 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
-    def get_permissions(self):
-        if self.action == 'create' or self.action == 'list':
-            permission_classes = [AllowAny]
-        elif self.action == 'me' or self.action == 'retrieve':
-            permission_classes = [IsAuthenticated]
-        else:
-            permission_classes = [IsAuthenticated]
+    # def get_permissions(self):
+    #     if self.action == 'create' or self.action == 'list':
+    #         permission_classes = [AllowAny]
+    #     elif self.action == 'me' or self.action == 'retrieve':
+    #         permission_classes = [IsAuthenticated]
+    #     else:
+    #         permission_classes = [IsAuthenticated]
 
-        return [permission() for permission in permission_classes]
+    #     return [permission() for permission in permission_classes]
 
     @action(['get'], detail=False)
     def me(self, request):
