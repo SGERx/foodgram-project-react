@@ -37,7 +37,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create' or self.action == 'list':
             permission_classes = [AllowAny]
-        elif self.action == 'me' or self.action == 'retrieve' or self.action == 'update':
+        elif self.action == 'me' or self.action == 'retrieve':
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsAuthenticated]
@@ -56,15 +56,6 @@ class CustomUserViewSet(viewsets.ModelViewSet):
             serializer.save(password=password)
         else:
             serializer.save()
-
-    def perform_update(self, serializer):
-        if 'password' in self.request.data:
-            password = make_password(self.request.data['password'])
-            serializer.save(password=password)
-        else:
-            serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SubscriptionView(APIView):
