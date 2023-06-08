@@ -14,22 +14,32 @@ from .utils import recipe_ingredient_create
 User = get_user_model()
 
 from django.contrib.auth import password_validation
+from django.contrib.auth.password_validation import CurrentPasswordValidator
 from rest_framework import serializers
 
-
 class SetPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(required=True, write_only=True,
-                                     validators=[password_validation.validate_password])
-    confirm_password = serializers.CharField(required=True, write_only=True)
+    old_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
+    new_password_confirm = serializers.CharField(write_only=True, required=True)
+
+    def validate_old_password(self, value):
+        user = self.context['user']
+        if not user.check_password(value):
+            raise serializers.ValidationError("The current password is incorrect.")
+        return value
+
+    def validate_new_password(self, value):
+        password_validation.validate_password(value)
+        return value
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['confirm_password']:
-            raise serializers.ValidationError("Password fields didn't match.")
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError("New password fields didn't match.")
         return attrs
 
     def save(self, **kwargs):
         user = self.context['user']
-        user.set_password(self.validated_data['password'])
+        user.set_password(self.validated_data['new_password'])
         user.save()
         return user
 
