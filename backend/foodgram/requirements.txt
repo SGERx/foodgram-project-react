@@ -49,7 +49,6 @@ pluggy==0.13.1
 psycopg2-binary==2.9.6
 py==1.11.0
 pyaes==1.6.1
-pycairo==1.23.0
 pycodestyle==2.9.1
 pycparser==2.21
 pyfiglet==0.8.post1
