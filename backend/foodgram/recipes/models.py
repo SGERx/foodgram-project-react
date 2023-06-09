@@ -6,6 +6,22 @@ from users.models import CustomUser
 MAX_CHAR_LENGTH = 200
 
 
+class Ingredient(models.Model):
+    name = models.CharField(verbose_name='Название',
+                            max_length=MAX_CHAR_LENGTH,
+                            )
+    measurement_unit = models.CharField(verbose_name='Единица измерения',
+                                        max_length=MAX_CHAR_LENGTH)
+
+    class Meta:
+        verbose_name = 'ингредиент'
+        verbose_name_plural = 'ингредиенты'
+        ordering = ['name']
+
+    def __str__(self):
+        return f'{self.name}, {self.measurement_unit}'
+
+
 class Tag(models.Model):
 
     name = models.CharField(verbose_name='название',
@@ -34,20 +50,7 @@ class Tag(models.Model):
         return self.name
 
 
-class Ingredient(models.Model):
-    name = models.CharField(verbose_name='Название',
-                            max_length=MAX_CHAR_LENGTH,
-                            )
-    measurement_unit = models.CharField(verbose_name='Единица измерения',
-                                        max_length=MAX_CHAR_LENGTH)
 
-    class Meta:
-        verbose_name = 'ингредиент'
-        verbose_name_plural = 'ингредиенты'
-        ordering = ['name']
-
-    def __str__(self):
-        return f'{self.name}, {self.measurement_unit}'
 
 
 class Recipe(models.Model):
@@ -76,9 +79,10 @@ class Recipe(models.Model):
         Tag,
         related_name='recipes',
         verbose_name='тег',)
+    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = ['-pub_date']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
