@@ -10,7 +10,7 @@ lg:
 admin@yandex.ru
 
 ps:
-admin
+admin123
 
 ### Технологии:
 
