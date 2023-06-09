@@ -4,6 +4,14 @@
 
 Доступен по адресу 51.250.71.172
 
+Данные для админа:
+
+lg:
+admin@yandex.ru
+
+ps:
+admin
+
 ### Технологии:
 
 Python, Django, Django Rest Framework, Docker, Gunicorn, NGINX, PostgreSQL, Yandex Cloud, Continuous Integration, Continuous Deployment
