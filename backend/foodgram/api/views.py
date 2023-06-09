@@ -18,6 +18,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
+from rest_framework.viewsets import ReadOnlyModelViewSet
 from users.models import CustomUser, Subscription
 
 from .filters import IngredientFilter, RecipeFilter
@@ -34,16 +35,6 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
-
-    # def get_permissions(self):
-    #     if self.action == 'create' or self.action == 'list':
-    #         permission_classes = [AllowAny]
-    #     elif self.action == 'me' or self.action == 'retrieve':
-    #         permission_classes = [IsAuthenticated]
-    #     else:
-    #         permission_classes = [IsAuthenticated]
-
-    #     return [permission() for permission in permission_classes]
 
     @action(detail=False, methods=['post'])
     def set_password(self, request):
@@ -119,7 +110,7 @@ class SubscriptionView(APIView):
         return Response(
             status=status.HTTP_400_BAD_REQUEST
         )
-   
+
 
 class SubscriptionListView(ListAPIView):
     serializer_class = SubscriptionSerializer
@@ -146,10 +137,11 @@ class TagViewSet(ListRetrieveViewSet):
     permission_classes = (AllowAny,)
 
 
-class IngredientViewSet(ListRetrieveViewSet):
+class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
 
 
@@ -159,7 +151,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
     pagination_class = CustomPagination
     permission_classes = (AllowAny, )
-    # serializer_class = RecipeWriteSerializer
 
     def get_permissions(self):
         if self.action == 'create' or self.action == 'update':
