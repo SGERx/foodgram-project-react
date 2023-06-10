@@ -2,13 +2,14 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
-from rest_framework import serializers
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from recipes.models import Ingredient, Recipe, Tag, IngredientInRecipe
+from rest_framework import serializers, status, viewsets
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.validators import UniqueTogetherValidator
-from users.models import CustomUser, Subscription
+from users.models import Subscription
 
-from .permissions import IsAuthorOrReadOnly
 from .utils import recipe_ingredient_create
 
 User = get_user_model()
@@ -128,7 +129,6 @@ class RecipeFollowSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    # id = serializers.IntegerField(read_only=True, source='author.id')
     id = serializers.ReadOnlyField(source='author.id')
     email = serializers.CharField(source='author.email', read_only=True)
     username = serializers.CharField(source='author.username', read_only=True)
@@ -152,10 +152,21 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     def validate(self, validated_data):
         author = validated_data.get('author')
         user = self.context.get('request').user
-        if Subscription.objects.filter(author=author, user=user).exists():
-            raise serializers.ValidationError('Вы уже подписаны на этого автора')
-        subscription = Subscription.objects.create(author=author, user=user)
-        return subscription
+        method = self.context.method
+        if method == 'POST':
+            if user == author:
+                return Response(
+                    {'error': 'You can"t subscribe on yourself'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if Subscription.objects.filter(author=author, user=user).exists():
+                raise serializers.ValidationError('Вы уже подписаны на этого автора')
+            subscription = Subscription.objects.create(author=author, user=user)
+            return subscription
+        if method == 'DELETE':
+            if user.is_anonymous:
+                return False
+
 
     def get_recipes(self, obj):
         request = self.context.get('request')

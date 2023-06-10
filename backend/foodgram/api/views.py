@@ -1,16 +1,10 @@
-import io
 from datetime import datetime
 
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.tokens import default_token_generator
-from django.core.files.base import ContentFile
-from django.core.mail import send_mail
 from django.db.models import Sum
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart, Tag)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView
@@ -19,12 +13,14 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                            ShoppingCart, Tag)
 from users.models import CustomUser, Subscription
 
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import ListRetrieveViewSet
 from .pagination import CustomPagination
-from .permissions import IsAuthorOrReadOnly
+from .permissions import AuthenticatedIsAuthorOrReadOnly
 from .serializers import (CustomUserSerializer, IngredientSerializer,
                           RecipeFollowSerializer, RecipeGetSerializer,
                           RecipeWriteSerializer, SetPasswordSerializer,
@@ -64,19 +60,6 @@ class SubscriptionView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, user_id):
-        if user_id == request.user.id:
-            return Response(
-                {'error': 'You can"t subscribe on yourself'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if Subscription.objects.filter(
-            user=request.user,
-            author_id=user_id,
-        ).exists():
-            return Response(
-                {'error': 'You are already subscribed'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
         sub = Subscription.objects.create(
             user=request.user,
             author_id=user_id
@@ -84,16 +67,12 @@ class SubscriptionView(APIView):
         return Response(
             self.serializer_class(
                 sub,
-                    context={'request': request}
+                context={'request': request}
             ).data,
             status=status.HTTP_201_CREATED
         )
 
     def delete(self, request, user_id):
-        if not request.user.is_authenticated:
-            return Response(
-                status=status.HTTP_401_UNAUTHORIZED
-            )
         subscription = Subscription.objects.filter(
             user=request.user,
             author_id=user_id,
@@ -154,7 +133,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'create' or self.action == 'update':
-            return (IsAuthorOrReadOnly(),)
+            return (AuthenticatedIsAuthorOrReadOnly(),)
         return super().get_permissions()
 
     def get_queryset(self):
@@ -175,8 +154,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-        # return Response({'success': 'Рецепт добавлен!'},
-        #                 status=status.HTTP_201_CREATED)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

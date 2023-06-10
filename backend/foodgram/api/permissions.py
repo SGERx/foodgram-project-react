@@ -4,13 +4,13 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 User = get_user_model()
 
 
-class IsAdmin(BasePermission):
+class AuthenticatedIsAdmin(BasePermission):
     def has_permission(self, request, view):
 
         return request.user.is_authenticated and request.user.is_admin
 
 
-class CreateOrIsAuthorOrReadOnly(BasePermission):
+class AuthenticatedCreateOrIsAuthorOrReadOnly(BasePermission):
     def has_permission(self, request, view):
 
         return (
@@ -29,7 +29,7 @@ class CreateOrIsAuthorOrReadOnly(BasePermission):
         )
 
 
-class IsAdminOrReadOnly(BasePermission):
+class AuthenticatedIsAdminOrReadOnly(BasePermission):
     def has_permission(self, request, view):
 
         return (
@@ -39,7 +39,7 @@ class IsAdminOrReadOnly(BasePermission):
         )
 
 
-class IsAuthorOrReadOnly(BasePermission):
+class AuthenticatedIsAuthorOrReadOnly(BasePermission):
 
     def has_permission(self, request, view):
         return (request.method in SAFE_METHODS

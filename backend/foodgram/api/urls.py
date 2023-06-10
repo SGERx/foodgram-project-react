@@ -1,8 +1,7 @@
-from api.views import SubscriptionListView, SubscriptionView
+from api.views import SubscriptionView, SubscriptionListView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
-from djoser.views import UserViewSet
 from rest_framework import routers
 
 from .views import (CustomUserViewSet, IngredientViewSet, RecipeViewSet,
