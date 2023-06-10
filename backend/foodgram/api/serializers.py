@@ -2,12 +2,11 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from recipes.models import Ingredient, Recipe, Tag, IngredientInRecipe
-from rest_framework import serializers, status, viewsets
+from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.validators import UniqueTogetherValidator
+from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
 from users.models import Subscription
 
 from .utils import recipe_ingredient_create
